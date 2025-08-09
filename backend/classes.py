@@ -39,6 +39,7 @@ class Piece:
     square: Square
 
 
+@dataclass
 class Princess(Piece):
     has_escape: bool = True
 

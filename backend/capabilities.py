@@ -9,8 +9,7 @@ class Capability(ABC):
     @abstractmethod
     def moves(self, piece: Piece, board: Board) -> Iterable[list[Square]]: ...
     def destinations(self, piece: Piece, board: Board) -> Iterable[Square]:
-        destinations = {move[-1] for move in self.moves(piece, board)}
-        yield from destinations
+        yield from {move[-1] for move in self.moves(piece, board)}
 
 
 class Stepper(Capability):
