@@ -141,7 +141,7 @@ class PrincessEscape(Capability):
 
     def moves(self, piece: Princess, board: Board) -> Iterable[list[Square]]:
         if not piece.has_escape:
-            yield []
+            return
         else:
             moves = []
             for row in range(10):
