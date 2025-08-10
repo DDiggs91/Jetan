@@ -1,5 +1,5 @@
 # app/__init__.py
-from flask import Flask
+from flask import Flask, render_template
 from app.routes import games, moves, diffs
 from app.services.game_service import InMemoryGameService
 
@@ -16,4 +16,9 @@ def create_app(config: dict | None = None) -> Flask:
     app.register_blueprint(diffs.bp)
 
     # TODO: central error handlers mapping exceptions to JSON/status codes
+
+    @app.get("/")
+    def index():
+        return render_template("index.html")
+
     return app
