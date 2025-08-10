@@ -1,0 +1,4 @@
+Get a new game
+curl -X POST http://127.0.0.1:5000/api/v1/games -H "Content-Type: application/json" -d '{"variant":"standard"}'
+Get a snapshot of the game
+curl http://127.0.0.1:5000/api/v1/games/<GAME_ID>

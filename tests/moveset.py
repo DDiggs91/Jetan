@@ -1,7 +1,7 @@
 from typing import Iterable
 
-from backend.classes import Board, Piece, Princess, Square, JetanPiece, Color
-from backend.capabilities import CAPABILITIES_BY_TYPE
+from app.engine.board import Board
+from app.engine.pieces import CAPABILITIES_BY_TYPE, Piece, Princess, Square, JetanPiece, Color
 
 
 def generate_legal_moves(board: Board, piece: Piece) -> Iterable[list[Square]]:

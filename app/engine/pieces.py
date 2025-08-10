@@ -1,14 +1,70 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from dataclasses import dataclass
+from enum import Enum, auto
 from typing import Iterable
 
-from backend.classes import Piece, Princess, Board, Square, Color, JetanPiece
-from backend.constants import ORTHO_MOVES, DIAGONAL_MOVES
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from app.engine.board import Board
+
+from app.engine.constants import ORTHO_MOVES, DIAGONAL_MOVES
+
+
+@dataclass(frozen=True)
+class Square:
+    row: int
+    col: int
+
+    def __post_init__(self):
+        if not (0 <= self.row <= 9 and 0 <= self.col <= 9):
+            raise ValueError(f"The board is a 10x10 board. {self.row}, {self.col} is not valid.")
+
+    def __add__(self, delta: tuple[int, int]) -> "Square":
+        dr, dc = delta
+        return Square(self.row + dr, self.col + dc)
+
+
+class JetanPiece(Enum):
+    Panthan = "p"
+    Chief = "C"
+    Princess = "Q"
+    Padwar = "P"
+    Warrior = "W"
+    Thoat = "T"
+    Dwar = "D"
+    Flier = "F"
+
+
+class Color(Enum):
+    ORANGE = auto()
+    BLACK = auto()
+
+
+@dataclass
+class Piece:
+    type: JetanPiece
+    color: Color
+    square: Square
+
+
+@dataclass
+class Princess(Piece):
+    has_escape: bool = True
+
+
+@dataclass(frozen=True)
+class Move:
+    piece: Piece
+    final_square: Square
 
 
 class Capability(ABC):
     @abstractmethod
-    def moves(self, piece: Piece, board: Board) -> Iterable[list[Square]]: ...
-    def destinations(self, piece: Piece, board: Board) -> Iterable[Square]:
+    def moves(self, piece: Piece, board: "Board") -> Iterable[list[Square]]: ...
+    def destinations(self, piece: Piece, board: "Board") -> Iterable[Square]:
         yield from {move[-1] for move in self.moves(piece, board)}
 
 
@@ -17,11 +73,11 @@ class Stepper(Capability):
         self.directions = directions
         self.max_steps = max_steps
 
-    def moves(self, piece: Piece, board: Board) -> Iterable[list[Square]]:
+    def moves(self, piece: Piece, board: "Board") -> Iterable[list[Square]]:
         path = [piece.square]
         yield from self._dfs_paths(piece, board, path, self.max_steps)
 
-    def _dfs_paths(self, piece: Piece, board: Board, path: list[Square], steps_left: int):
+    def _dfs_paths(self, piece: Piece, board: "Board", path: list[Square], steps_left: int):
         if steps_left == 0:
             if len(path) == self.max_steps + 1:
                 yield list(path)
@@ -49,11 +105,11 @@ class Jumper(Capability):
         self.directions = directions
         self.max_steps = max_steps
 
-    def moves(self, piece: Piece, board: Board) -> Iterable[list[Square]]:
+    def moves(self, piece: Piece, board: "Board") -> Iterable[list[Square]]:
         path = [piece.square]
         yield from self._dfs_paths(piece, board, path, self.max_steps)
 
-    def _dfs_paths(self, piece: Piece, board: Board, path: list[Square], steps_left: int):
+    def _dfs_paths(self, piece: Piece, board: "Board", path: list[Square], steps_left: int):
         if steps_left == 0:
             if len(path) == self.max_steps + 1:
                 yield list(path)
@@ -80,7 +136,7 @@ class Jumper(Capability):
 
 
 class ThoatMovement(Capability):
-    def moves(self, piece: Piece, board: Board) -> Iterable[list[Square]]:
+    def moves(self, piece: Piece, board: "Board") -> Iterable[list[Square]]:
         paths = []
         for step1 in ORTHO_MOVES:
             path: list[Square] = [piece.square]
@@ -109,11 +165,11 @@ class JumperNoCapture(Capability):
         self.directions = directions
         self.max_steps = max_steps
 
-    def moves(self, piece: Piece, board: Board) -> Iterable[list[Square]]:
+    def moves(self, piece: Piece, board: "Board") -> Iterable[list[Square]]:
         path = [piece.square]
         yield from self._dfs_paths(piece, board, path, self.max_steps)
 
-    def _dfs_paths(self, piece: Piece, board: Board, path: list[Square], steps_left: int):
+    def _dfs_paths(self, piece: Piece, board: "Board", path: list[Square], steps_left: int):
         if steps_left == 0:
             if len(path) == self.max_steps + 1:
                 yield list(path)
@@ -137,8 +193,7 @@ class JumperNoCapture(Capability):
 
 
 class PrincessEscape(Capability):
-
-    def moves(self, piece: Princess, board: Board) -> Iterable[list[Square]]:
+    def moves(self, piece: Princess, board: "Board") -> Iterable[list[Square]]:
         if not piece.has_escape:
             return
         else:
@@ -168,3 +223,15 @@ CAPABILITIES_BY_TYPE = {
     (JetanPiece.Princess, Color.ORANGE): [JumperNoCapture(ORTHO_MOVES + DIAGONAL_MOVES, 3), PrincessEscape()],
     (JetanPiece.Princess, Color.BLACK): [JumperNoCapture(ORTHO_MOVES + DIAGONAL_MOVES, 3), PrincessEscape()],
 }
+
+
+def validate_move(move: Move, board: Board) -> bool:
+    return move.final_square in {
+        square
+        for capability in CAPABILITIES_BY_TYPE[(move.piece.type, move.piece.color)]
+        for square in capability.destinations(move.piece, board)
+    }
+
+
+def destinations(piece: Piece, board: Board) -> list[Square]:
+    return [square for capability in CAPABILITIES_BY_TYPE[(piece.type, piece.color)] for square in capability.destinations(piece, board)]
