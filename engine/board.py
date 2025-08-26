@@ -1,4 +1,4 @@
-from app.engine.pieces import Piece, Square, Move, JetanPiece, Color, validate_move, destinations
+from engine.pieces import Piece, Square, Move, JetanPiece, Color, validate_move, destinations
 
 INITIAL_BOARD_SETUP = [
     Piece(JetanPiece.Warrior, Color.ORANGE, Square(9, 0)),

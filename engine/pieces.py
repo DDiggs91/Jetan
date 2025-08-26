@@ -8,9 +8,9 @@ from typing import Iterable
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from app.engine.board import Board
+    from engine.board import Board
 
-from app.engine.constants import ORTHO_MOVES, DIAGONAL_MOVES
+from engine.constants import ORTHO_MOVES, DIAGONAL_MOVES
 
 
 @dataclass(frozen=True)
